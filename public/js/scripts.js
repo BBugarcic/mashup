@@ -72,7 +72,65 @@ $(function() {
  */
 function addMarker(place)
 {
-    // TODO
+	// instantiate marker
+	var myLatLng = new google.maps.LatLng(place.latitude,place.longitude);  	
+	
+	var	marker = new MarkerWithLabel({
+		icon: "https://maps.google.com/mapfiles/kml/pal2/icon31.png",
+		position: myLatLng,
+		labelContent: place.place_name + ", " + place.admin_name1,
+		labelAnchor: new google.maps.Point(22, 0),
+		map: map,
+		labelClass: "labels",
+		animation: google.maps.Animation.DROP
+		
+     });
+
+    // listen for clicks on marker
+    google.maps.event.addListener(marker, "click", function() {
+
+        // show info windows
+        showInfo(marker);
+
+        // taking articles 
+        $.getJSON("articles.php", {geo: place.postal_code})
+        .done(function(data, textStatus, jqXHR) {
+
+            // if there is no news
+            if (data.length === 0)
+            {
+                showInfo(marker, "Slow news day!");
+            }
+
+            // building list of titles
+            else
+            {
+            
+                var ul = "<ul>";
+
+                // template for li
+                var template = _.template("<li><a href='<%- link %>' target='_blank'><%- title %></a></li>");
+
+                // iterate over articles
+                for (var i = 0; i < data.length; i++)
+                {
+                    // adding titles to the list
+                    ul += template({link: data[i].link, title: data[i].title});
+                }
+
+                ul += "</ul>";
+
+                // show info window at marker
+                showInfo(marker, ul);
+            }
+        })
+
+
+    });
+
+    // remember marker (so we can remove it later)
+    markers.push(marker);
+	
 }
 
 /**
@@ -106,7 +164,7 @@ function configure()
         source: search,
         templates: {
             empty: "no places found yet",
-            suggestion: _.template("<p>TODO</p>")
+            suggestion: _.template("<p><%- place_name %>, <%- admin_name1 %>, <%- postal_code %>, <%- admin_code1 %></p>")
         }
     });
 
@@ -157,7 +215,14 @@ function hideInfo()
  */
 function removeMarkers()
 {
-    // TODO
+    // Sets the map on all markers in the array.
+  	for (var i = 0; i < markers.length; i++) {
+    	markers[i].setMap(null);
+	}
+	markers = [];
+	
+
+	
 }
 
 /**
